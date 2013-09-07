@@ -81,6 +81,7 @@ public:
 
     // Write data to the stream
     void sendData(const char *str);
+    void sendDataMasked(const char *str);
     void sendData(String str);
 
     char *path;

@@ -210,14 +210,16 @@ String WebSocketClient::handleStream() {
 
         if (hasMask) {
             for (i=0; i<length; ++i) {
-                socketString += (char) (timedRead() ^ mask[i % 4]);
+                //socketString += (char) (timedRead() ^ mask[i % 4]);
+                socketString.concat((char) (timedRead() ^ mask[i % 4]));
                 if (!socket_client->connected()) {
                     return socketString;
                 }
             }
         } else {
             for (i=0; i<length; ++i) {
-                socketString += (char) timedRead();
+                //socketString += (char) timedRead();
+                socketString.concat((char) timedRead());
                 if (!socket_client->connected()) {
                     return socketString;
                 }
@@ -305,4 +307,33 @@ void WebSocketClient::sendEncodedData(String str) {
     str.toCharArray(cstr, size);
 
     sendEncodedData(cstr);
+}
+
+void WebSocketClient::sendDataMasked(const char *str) {
+#ifdef DEBUGGING
+    Serial.print(F("sendDataMasked: "));
+    Serial.println(str);
+#endif
+
+    if (socket_client->connected()) {
+        int size = strlen(str);
+
+		socket_client->write((byte)((byte)128 | (byte)1));
+		socket_client->write((byte)(128 | size));
+
+		uint8_t mask[4] = {28,-90,-12,-113};
+		mask[0] = (byte)(rand() * 256);
+		mask[1] = (byte)(rand() * 256);
+		mask[2] = (byte)(rand() * 256);
+		mask[3] = (byte)(rand() * 256);
+		for (int i=0; i<4; ++i) {
+			socket_client->write(mask[i]);
+		}
+
+		for(int i=0; i<size; i++) {
+			socket_client->write((byte)(str[i] ^ mask[i%4]));
+		}
+
+		socket_client->flush();
+    }
 }
